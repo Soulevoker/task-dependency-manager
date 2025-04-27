@@ -1,23 +1,23 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/gin-gonic/gin"
+	"os"
+	"task-dependency-manager/internal/handlers"
+)
 
 func main() {
-	router := gin.Default()
+	r := gin.Default()
 
-	router.GET("/health", handleHealth)
-	router.GET("/version", handleVersion)
+	r.GET("/health", handlers.Health)
+	r.GET("/version", handlers.Version)
 
-	err := router.Run("localhost:8080")
-	if err != nil {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	if err := r.Run(":" + port); err != nil {
 		panic(err)
 	}
-}
-
-func handleHealth(c *gin.Context) {
-	c.JSON(200, gin.H{"status": "OK"})
-}
-
-func handleVersion(c *gin.Context) {
-	c.JSON(200, gin.H{"version": "1.0.0"})
 }
