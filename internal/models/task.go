@@ -7,10 +7,11 @@ import (
 )
 
 type Task struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name" binding:"required"`
-	Description string     `json:"description,omitempty"`
-	Status      TaskStatus `json:"status"`
+	ID           string     `json:"id"`
+	Name         string     `json:"name" binding:"required"`
+	Description  string     `json:"description,omitempty"`
+	Status       TaskStatus `json:"status"`
+	Dependencies []string   `json:"dependencies,omitempty"`
 }
 
 // TaskStatus represents the status of a task.

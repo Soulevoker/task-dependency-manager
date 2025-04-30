@@ -83,3 +83,39 @@ func (h *TaskHandler) ListTasks(c *gin.Context) {
 	}
 	c.IndentedJSON(http.StatusOK, l)
 }
+
+func (h *TaskHandler) AddDependency(c *gin.Context) {
+	taskID := c.Param("id")
+	var req struct {
+		DependencyID string `json:"dependency_id" binding:"required"`
+	}
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	err := h.service.AddDependency(taskID, req.DependencyID)
+	if err != nil {
+		if err.Error() == "circular dependency detected" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+func (h *TaskHandler) RemoveDependency(c *gin.Context) {
+	taskID := c.Param("id")
+	depID := c.Param("depId")
+
+	err := h.service.RemoveDependency(taskID, depID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}

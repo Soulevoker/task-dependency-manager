@@ -32,6 +32,8 @@ func main() {
 	r.PUT("/tasks/:id", tasksHandler.UpdateTask)
 	r.POST("/tasks", tasksHandler.CreateTask)
 	r.GET("/tasks", tasksHandler.ListTasks)
+	r.POST("/tasks/:id/dependencies", tasksHandler.AddDependency)
+	r.DELETE("/tasks/:id/dependencies/:depId", tasksHandler.RemoveDependency)
 
 	port := os.Getenv("PORT")
 	if port == "" {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"slices"
 	"strings"
 	"task-dependency-manager/internal/models"
 	"task-dependency-manager/internal/storage"
@@ -77,6 +78,84 @@ func (s *TaskService) ListTasks() ([]*models.Task, error) {
 		return []*models.Task{}, err
 	}
 	return tasks, nil
+}
+
+func (s *TaskService) AddDependency(taskID, depID string) error {
+	// Verify both tasks exist
+	task, err := s.GetTask(taskID)
+	if err != nil {
+		return fmt.Errorf("task not found: %s", taskID)
+	}
+	if _, err := s.GetTask(depID); err != nil {
+		return fmt.Errorf("dependency task not found: %s", depID)
+	}
+
+	// Add dependency
+	for _, d := range task.Dependencies {
+		if d == depID {
+			return nil // Dependency already exists
+		}
+	}
+	task.Dependencies = append(task.Dependencies, depID)
+
+	// Check for cycles
+	if s.hasCycle(taskID) {
+		// Rollback by removing the dependency
+		task.Dependencies = task.Dependencies[:len(task.Dependencies)-1]
+		return errors.New("circular dependency detected")
+	}
+
+	return s.store.UpdateTask(task)
+}
+
+func (s *TaskService) RemoveDependency(taskID, depID string) error {
+	task, err := s.GetTask(taskID)
+	if err != nil {
+		return fmt.Errorf("task not found: %s", taskID)
+	}
+	if _, err := s.GetTask(depID); err != nil {
+		return fmt.Errorf("dependency task not found: %s", depID)
+	}
+
+	// Remove dependency
+	println(slices.Contains(task.Dependencies, depID))
+	for i, d := range task.Dependencies {
+		if d == depID {
+			task.Dependencies = append(task.Dependencies[:i], task.Dependencies[i+1:]...)
+			return s.store.UpdateTask(task)
+		}
+	}
+	return nil // Dependency not found, no action needed
+}
+
+// hasCycle checks for cycles in the dependency graph using DFS.
+func (s *TaskService) hasCycle(startID string) bool {
+	visited := make(map[string]bool)
+	recStack := make(map[string]bool)
+
+	var dfs func(id string) bool
+	dfs = func(id string) bool {
+		visited[id] = true
+		recStack[id] = true
+
+		task, err := s.GetTask(id)
+		if err != nil {
+			return false
+		}
+
+		for _, depID := range task.Dependencies {
+			if !visited[depID] && dfs(depID) {
+				return true
+			} else if recStack[depID] {
+				return true // Cycle detected
+			}
+		}
+
+		recStack[id] = false
+		return false
+	}
+
+	return dfs(startID)
 }
 
 func (s *TaskService) SeedTasks() error {
