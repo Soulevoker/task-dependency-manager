@@ -33,11 +33,6 @@ func (h *TaskHandler) CreateTask(c *gin.Context) {
 		return
 	}
 
-	if err := task.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
 	createdTask, err := h.service.CreateTask(&task)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -54,23 +49,27 @@ func (h *TaskHandler) UpdateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
-	if err := task.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
 
-	updateTask, err := h.service.UpdateTask(&task)
+	updatedTask, err := h.service.UpdateTask(&task)
 	if err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "task not found" {
+			c.IndentedJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
 		return
 	}
-	c.IndentedJSON(http.StatusOK, updateTask)
+	c.IndentedJSON(http.StatusOK, updatedTask)
 }
 
 func (h *TaskHandler) DeleteTask(c *gin.Context) {
 	taskID := c.Param("id")
 	if err := h.service.DeleteTask(taskID); err != nil {
-		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		if err.Error() == "task not found" {
+			c.IndentedJSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			c.IndentedJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		}
 		return
 	}
 	c.IndentedJSON(http.StatusOK, gin.H{"message": "task {" + taskID + "} deleted"})
@@ -82,5 +81,5 @@ func (h *TaskHandler) ListTasks(c *gin.Context) {
 		c.IndentedJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	c.JSONP(http.StatusOK, l)
+	c.IndentedJSON(http.StatusOK, l)
 }

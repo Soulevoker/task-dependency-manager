@@ -2,7 +2,9 @@ package services
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
+	"strings"
 	"task-dependency-manager/internal/models"
 	"task-dependency-manager/internal/storage"
 )
@@ -26,11 +28,15 @@ func (s *TaskService) GetTask(id string) (*models.Task, error) {
 }
 
 func (s *TaskService) CreateTask(task *models.Task) (*models.Task, error) {
+	if err := task.Validate(); err != nil {
+		return nil, err
+	}
 	if task.ID == "" {
 		task.ID = uuid.New().String()
 	}
+	task.Status = models.TaskStatus(strings.ToLower(string(task.Status)))
 	if err := s.store.CreateTask(task); err != nil {
-		return nil, errors.New("task could not be created")
+		return nil, fmt.Errorf("failed to create task: %w", err)
 	}
 	return task, nil
 }
@@ -39,11 +45,15 @@ func (s *TaskService) UpdateTask(task *models.Task) (*models.Task, error) {
 	if task.ID == "" {
 		return nil, errors.New("you must provide a task ID")
 	}
+	if err := task.Validate(); err != nil {
+		return nil, err
+	}
 	if _, err := s.store.GetTask(task.ID); err != nil {
 		return nil, errors.New("task not found")
 	}
+	task.Status = models.TaskStatus(strings.ToLower(string(task.Status)))
 	if err := s.store.UpdateTask(task); err != nil {
-		return nil, errors.New("task could not be updated")
+		return nil, fmt.Errorf("failed to update task: %w", err)
 	}
 	return task, nil
 }

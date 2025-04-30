@@ -22,7 +22,7 @@ func (im *InMemoryStore) GetTask(id string) (*models.Task, error) {
 	defer im.mu.RUnlock()
 	task, ok := im.tasks[id]
 	if !ok {
-		return &models.Task{}, errors.New("task not found")
+		return nil, errors.New("task not found")
 	}
 	return task, nil
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"os"
 	"task-dependency-manager/internal/handlers"
 	"task-dependency-manager/internal/services"
@@ -22,13 +23,13 @@ func main() {
 	if gin.Mode() == gin.DebugMode {
 		fmt.Println("[GIN-debug] Seeding Tasks For Local Development")
 		if err := tasksService.SeedTasks(); err != nil {
-			panic(err)
+			log.Printf("Failed to seed tasks: %v", err)
 		}
 	}
 	tasksHandler := handlers.NewTaskHandler(tasksService)
 	r.GET("/tasks/:id", tasksHandler.GetTask)
 	r.DELETE("/tasks/:id", tasksHandler.DeleteTask)
-	r.POST("/tasks/:id", tasksHandler.UpdateTask)
+	r.PUT("/tasks/:id", tasksHandler.UpdateTask)
 	r.POST("/tasks", tasksHandler.CreateTask)
 	r.GET("/tasks", tasksHandler.ListTasks)
 
@@ -38,6 +39,6 @@ func main() {
 	}
 
 	if err := r.Run(":" + port); err != nil {
-		panic(err)
+		log.Fatalf("Failed to start server: %v", err)
 	}
 }

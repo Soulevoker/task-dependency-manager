@@ -6,5 +6,5 @@ import (
 )
 
 func Version(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"version": "1.0.0"})
+	c.IndentedJSON(http.StatusOK, gin.H{"version": "1.0.0"})
 }

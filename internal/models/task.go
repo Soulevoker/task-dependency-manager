@@ -7,10 +7,10 @@ import (
 )
 
 type Task struct {
-	ID          string `json:"id"`
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description,omitempty"`
-	Status      string `json:"status"`
+	ID          string     `json:"id"`
+	Name        string     `json:"name" binding:"required"`
+	Description string     `json:"description,omitempty"`
+	Status      TaskStatus `json:"status"`
 }
 
 // TaskStatus represents the status of a task.
@@ -24,8 +24,8 @@ const (
 )
 
 // ValidStatus checks if a status is valid.
-func ValidStatus(status string) bool {
-	switch TaskStatus(strings.ToLower(status)) {
+func ValidStatus(status TaskStatus) bool {
+	switch status {
 	case StatusPending, StatusInProgress, StatusCompleted:
 		return true
 	default:
@@ -34,8 +34,11 @@ func ValidStatus(status string) bool {
 }
 
 func (task *Task) Validate() error {
+	if len(strings.TrimSpace(task.Name)) == 0 {
+		return errors.New("name is required and cannot be empty")
+	}
 	if !ValidStatus(task.Status) {
-		return errors.New(fmt.Sprintf("invalid task status:%s", task.Status))
+		return fmt.Errorf("invalid task status: %s", task.Status)
 	}
 	return nil
 }
