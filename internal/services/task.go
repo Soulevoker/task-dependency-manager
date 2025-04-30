@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"slices"
 	"strings"
 	"task-dependency-manager/internal/models"
 	"task-dependency-manager/internal/storage"
@@ -118,7 +117,6 @@ func (s *TaskService) RemoveDependency(taskID, depID string) error {
 	}
 
 	// Remove dependency
-	println(slices.Contains(task.Dependencies, depID))
 	for i, d := range task.Dependencies {
 		if d == depID {
 			task.Dependencies = append(task.Dependencies[:i], task.Dependencies[i+1:]...)
@@ -159,6 +157,7 @@ func (s *TaskService) hasCycle(startID string) bool {
 }
 
 func (s *TaskService) SeedTasks() error {
+	// Define the three tasks
 	tasks := []models.Task{
 		{
 			Name:        "Task 1",
@@ -170,12 +169,30 @@ func (s *TaskService) SeedTasks() error {
 			Description: "Description 2",
 			Status:      "in_progress",
 		},
+		{
+			Name:        "Task 3",
+			Description: "Description 3",
+			Status:      "completed",
+		},
 	}
 
+	// Create the tasks and store their IDs
+	var taskIDs []string
 	for i := range tasks {
-		if _, err := s.CreateTask(&tasks[i]); err != nil {
-			return err
+		createdTask, err := s.CreateTask(&tasks[i])
+		if err != nil {
+			return fmt.Errorf("failed to create task: %w", err)
 		}
+		taskIDs = append(taskIDs, createdTask.ID)
 	}
+
+	// Add dependencies: Task 1 depends on Task 2, Task 2 depends on Task 3
+	if err := s.AddDependency(taskIDs[0], taskIDs[1]); err != nil {
+		return fmt.Errorf("failed to add dependency: %w", err)
+	}
+	if err := s.AddDependency(taskIDs[1], taskIDs[2]); err != nil {
+		return fmt.Errorf("failed to add dependency: %w", err)
+	}
+
 	return nil
 }
